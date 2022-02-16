@@ -1,6 +1,8 @@
 #!/bin/bash
 #
 
+# test ping
+
 BASE_IP="172.10.2"
 FIP=100
 EIP=120
