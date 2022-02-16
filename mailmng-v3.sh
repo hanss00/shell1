@@ -50,14 +50,20 @@ chk_SPAM() {
 
 conf_mail_chk() {
         echo
-        echo "   Sendmail >> sendmail.cf Config Info ............................"
+        echo "   Main Sendmail >> sendmail.cf Config Info ............................"
         egrep -i "DaemonPortOptions|AuthMechanisms|^DS|^Cw|^Dj|SmtpGreetingMessage|DeliveryMode|QueueDirectory"  /etc/mail/sendmail.cf | awk '{print "\t",$0}'
+        echo "    Main Sendmail >> local-host-names file Info ............................"
+        cat /etc/mail/local-host-names | grep -v "^#" | awk '{print "\t",$0}'
+        #echo "   Main Sendmail >> access file Info ............................"
+        #cat /etc/mail/LOCAL/access | grep -v "^#" | awk '{print "\t",$0}'
         echo
-        echo "   Sendmail >> local.cf Config Info ............................"
+        echo "   Local Sendmail >> local.cf Config Info ............................"
         egrep -i "DaemonPortOptions|AuthMechanisms|^DS|^Cw|^Dj|SmtpGreetingMessage|DeliveryMode|QueueDirectory"  /etc/mail/local.cf | awk '{print "\t",$0}'
-	    echo
-        echo "   Sendmail >> access file Info ............................"
-		cat /etc/mail/access | grep -v "^#" | awk '{print "\t",$0}' 
+        echo "    Local Sendmail >> local-host-names file Info ............................"
+        cat /etc/mail/LOCAL/local-host-names | grep -v "^#" | awk '{print "\t",$0}'
+            echo
+        echo "   Local Sendmail >> access file Info ............................"
+        cat /etc/mail/LOCAL/access | grep -v "^#" | awk '{print "\t",$0}'
 }
 
 conf_pop_chk() {
@@ -85,7 +91,7 @@ chk_mail() {
         netstat -nltp | grep :25 | awk '{print "\t",$0}'
         echo "   Sendmail Process Running ............................"
         ps -ef |grep sendmail | grep -v grep | awk '{print "\t",$0}'
-		echo
+                echo
         systemctl -n0 status sendmail | awk '{print "\t",$0}'
         echo "   Saslauthd Process Running ............................"
         ps -ef |grep saslauthd | grep -v grep | awk '{print "\t",$0}'
@@ -116,21 +122,21 @@ chk_dns() {
         echo "     resolv.conf file ..........."
         cat /etc/resolv.conf | awk '{print "\t",$0}'
         echo
-	for DNS in $MAIL_DNS
-	do
-        	echo "     $DNS query ..........."
-        	nslookup -q=mx $DNS > /tmp/dns_query.out
-        	cat /tmp/dns_query.out | awk '{print "\t",$0}'
-        	cat /tmp/dns_query.out | grep "mail exchanger" | awk '{print "nslookup ",$6}' |sh| awk '{print "\t",$0}'
-        	echo
-	done
+        for DNS in $MAIL_DNS
+        do
+                echo "     $DNS query ..........."
+                nslookup -q=mx $DNS > /tmp/dns_query.out
+                cat /tmp/dns_query.out | awk '{print "\t",$0}'
+                cat /tmp/dns_query.out | grep "mail exchanger" | awk '{print "nslookup ",$6}' |sh| awk '{print "\t",$0}'
+                echo
+        done
 }
 
 
 chk_log() {
         echo
-		echo "/var/log/maillog ................"
-		echo
+                echo "/var/log/maillog ................"
+                echo
         tail -30f /var/log/maillog &
         read SELT
         ps -ef |grep tail |grep maillog |grep -v grep | awk '{print $2}' | xargs kill -9
@@ -138,14 +144,52 @@ chk_log() {
 
 chk_MQueue() {
         echo
-		echo "mailq command ................"
-		/usr/bin/mailq
+                echo "mailq command ................"
+                /usr/bin/mailq
 }
 
 chk_MStatus() {
         echo
-		echo "mailstats command ................"
-		/usr/sbin/mailstats
+                echo "mailstats command ................"
+                /usr/sbin/mailstats
+}
+
+chk_mqueue() {
+        echo
+        echo "   Sendmail Mail Queue Directory Check  ............................"
+        MDIR=`grep QueueDirectory /etc/mail/sendmail.cf |awk -F'=' '{print $2}'`
+        while :
+        do
+                echo "`date` ------------------------------------------" | awk '{print "\t",$0}'
+                ls -al ${MDIR}/  | awk '{print "\t",$0}'
+                sleep 2
+        done
+}
+
+chk_mbox() {
+        echo
+        echo "   Sendmail MBOX Directory Check  ............................"
+        while :
+        do
+                echo "`date` ------------------------------------------" | awk '{print "\t",$0}'
+                ls -al /var/spool/mail/  | awk '{print "\t",$0}'
+                sleep 2
+        done
+}
+
+
+chk_Nlog() {
+        echo
+        echo "ls -al /usr/local/SMB_pkg/work.d/spam-apt.d/tmp.d/log.d"
+        ls -al /usr/local/SMB_pkg/work.d/spam-apt.d/tmp.d/log.d | awk '{print "\t",$0}'
+        echo
+        echo "ls -al /usr/local/SMB_pkg/work.d/spam-apt.d/tmp.d/include "
+        ls -al /usr/local/SMB_pkg/work.d/spam-apt.d/tmp.d/include | awk '{print "\t",$0}'
+        echo
+        echo "ls -al /usr/local/SMB_pkg/bin.d "
+        ls -al /usr/local/SMB_pkg/bin.d | awk '{print "\t",$0}'
+        echo
+        exit 0
 }
 
 while :
@@ -156,31 +200,31 @@ do
   cat <<_EOF_
   Mail Management Menu ....... :
 
-	1|mail_start)      Sendmail Start
-	2|mail_stop)       Sendmail Stop 
-	3|mail_chk)        Sendmail Config Check
-	4|mail_proc)       Sendmail Running Check
-	5|mail_spam)       Sendmail SPAM Config Check
-	6|pop_start)       POP(DoveCot) Start
-	7|pop_stop)        POP(DoveCot) Stop
-	8|pop_chk)         POP(DoveCot) Config Check
-	9|pop_proc)        POP(DoveCot) Running Check
-	10|maillog)        Mail Log Check
-	11|ALL_chk)        ALL Config Check	
-	
-	12|DNS_chk)        DNS Query Check
-	13|MQueue)         Mail Queue List Check
-    14|MailStatus)     Mail Status Check		
-	 
-	0|exit)            EXIT
-	
+        1|mail_start)      Sendmail Start
+        2|mail_stop)       Sendmail Stop
+           3|mail_chk)     Sendmail Config Check
+           4|mail_proc)    Sendmail Running Check
+           5|mail_spam)    Sendmail SPAM Config Check
+        6|pop_start)       POP(DoveCot) Start
+        7|pop_stop)        POP(DoveCot) Stop
+           8|pop_chk)      POP(DoveCot) Config Check
+           9|pop_proc)     POP(DoveCot) Running Check
+        10|maillog)        Mail Log Check
+        11|ALL_chk)        ALL Config Check
+
+        12|DNS_chk)        DNS Query Check
+        13|MQueue)         Mail Queue List Check
+        14|MailStatus)     Mail Status Check
+
+        0|exit)            EXIT
+
 _EOF_
 
-read -p "  Enter selection [0-12] > " SELT
+read -p "Enter selection [0-12] > " SELT
 
 case "$SELT" in
         0|exit)
-		echo
+                echo
                 exit 0
                 ;;
         1|mail_start)
@@ -210,7 +254,7 @@ case "$SELT" in
         9|chk_pop)
                 chk_pop
                 ;;
-		10|chk_log)
+                10|chk_log)
                 chk_log
                 ;;
         11|all)
@@ -227,6 +271,15 @@ case "$SELT" in
         14|chk_dns)
                 chk_MStatus
                 ;;
+        77|chk_mbox)
+                chk_mbox
+                ;;
+        88|chk_mqueue)
+                chk_mqueue
+                ;;
+        99|Nlogchk)
+                chk_Nlog
+                ;;
         *)
            echo
            echo -e "  Error : (${SELT}) selection error ..."
@@ -239,7 +292,6 @@ done
 
 # makemap hash /etc/mail/virtusertable < /etc/mail/virtusertable
 # makemap hash /etc/mail/access < /etc/mail/access
-# makemap hash /etc/mail/genericstable < /etc/mail/genericstable
 # newaliase
 
 
@@ -252,5 +304,3 @@ done
 #echo 'this is test2.' | mail -s 'sendmail test2' ${USER2}@3stest.co.kr
 #
 #echo "Test 3 from $(hostname -f)"|mail -s "Test 1 $(hostname -f)" ${USER3}@3stest.co.kr
-#echo 'this is test2.' | mail -s 'sendmail test2' testuser1@3stest.co.kr -c hanss00@naver.com
-
