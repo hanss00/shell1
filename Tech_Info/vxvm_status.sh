@@ -31,14 +31,15 @@ dg() {
         echo
 }
 
+CNT=0
 str1=$1
 if [ ! -z $str1 ]
 then
-for (( i = ${#str1} -1; i >= 0; i--))
-do
-        reverse=""
-        reverse="$reverse${str1:$i:1}"
-        case "$reverse" in
+        WCNT=`echo -n $str1 |wc -c`
+        while [ $WCNT -gt $CNT ]
+        do
+           reverse=`echo ${str1:$CNT:1}`
+           case "$reverse" in
                 d)
                         disk
                         ;;
@@ -63,8 +64,10 @@ do
                         echo -e "      valid option : volume(v)|DG(g)|disk(d)|plex(p)|subdisk(s)|dmp(m)"
                         echo
                         ;;
-        esac
-done
+           esac
+           ((CNT+=1))
+        done
 else
                         echo -e "  [ERROR] $0 : volume(v)|DG(g)|disk(d)|plex(p)|subdisk(s)|dmp(m)"
 fi
+
