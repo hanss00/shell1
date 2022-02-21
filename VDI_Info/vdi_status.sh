@@ -19,6 +19,25 @@ if [ $? -ne 0 ]; then
         exit 2
 fi
 
+HEAD_LINE() {
+        echo -e "\033[43;31mNEPYH NetDesktop ${HEADER} Status \033[0m ( `date` ) .."
+}
+
+ndt_log(){
+# journalctl -p :
+#    emerg=0, alert=1, crit=2, err=3, warning=4, notice=5, info=6, debug=7
+#    <start_log_level>..<end_log_level>
+#    journalctl -p 0..5 -u <service>
+        echo -e "\033[46;31mNEPYH Service Today Log (log level: emerg,alert,crit,err,warning,notice) \033[0m"
+        echo
+        for SERVICE in $ndt_service
+        do
+                echo -e " >> ${SERVICE} NEPYH Service Status ....."
+                journalctl -p 0..5 -u ${SERVICE} --since today --no-pager | awk '{print "\t",$0}'
+                echo
+        done
+}
+
 ps_exec1() {
          ps -C ${PROC_LIST} -o pid,pcpu,pmem,cmd,etime |grep -v ELAPSED
 }
@@ -44,7 +63,7 @@ ndt_proc_chk() {
 }
 
 ndt_service_chk() {
-        echo
+#        echo
         for SERVICE in $ndt_service
         do
                 HEADER=${SERVICE^^}
@@ -58,27 +77,28 @@ ps_exec() {
 }
 
 ndt_req_proc_chk() {
+        echo -e "\033[46;31mNEPYH NetDeskTop Required Process Running Check \033[0m"
         echo
         ndt_reg_proc="CEPH MariaDB MongoDB RabbitMQ REDIS"
         for PROC in $ndt_reg_proc
         do
                 if [ $PROC = "CEPH" ]; then
-                        echo "1. CEPH Process Check"
-                        PROC_LIST="ceph-mon,ceph-osd" ; ps_exec
+                        echo " 1. CEPH Process Check"
+                        PROC_LIST="ceph-mon,ceph-osd,ceph-crash,ceph-mgr" ; ps_exec
                 elif [ $PROC = "MariaDB" ]; then
-                        echo "2. MariaDB Process Check"
+                        echo " 2. MariaDB Process Check"
                         PROC_LIST="mysqld" ; ps_exec
                 elif [ $PROC = "MongoDB" ]; then
-                        echo "3. MongoDB Process Check"
+                        echo " 3. MongoDB Process Check"
                         PROC_LIST="mongod,mongos" ; ps_exec
                 elif [ $PROC = "RabbitMQ" ]; then
-                        echo "4. RabbitMQ Process Check"
+                        echo " 4. RabbitMQ Process Check"
                         PROC_LIST="beam.smp,epmd,inet_gethost" ; ps_exec
                 elif [ $PROC = "REDIS" ]; then
-                        echo "5. REDIS Process Check"
+                        echo " 5. REDIS Process Check"
                         PROC_LIST="redis-server" ; ps_exec
                 fi
-                                echo
+				echo
         done
 }
 
@@ -87,6 +107,8 @@ ndt_license() {
         PID=`cat $PID_FILE`
         License_PROC=`ps -ef |grep $PID |grep -v grep |wc -l`
 
+        echo -e "\033[46;31mNEPYH NetDeskTop License Process Check) \033[0m"
+        echo
         if [ $License_PROC -ne 2 ]
         then
                 echo -e " >> [ERROR] VDI License Process not running"
@@ -101,26 +123,28 @@ ndt_license() {
 
 case "$1" in
         vdi_service|s)
+                HEADER="Service"; HEAD_LINE
                 echo ;ndt_service_chk
                 echo
                 ;;
         vdi_service_loop|sl)
                 while :
                 do
-                        echo "`date` -------------------------------------"
-                        ndt_service_chk
-                        echo
+                        HEADER="Service"; HEAD_LINE
+                        echo; ndt_service_chk
+                        echo;echo
                         sleep $SLEEPTIME
                 done
                 ;;
         vdi_proc|p)
-                echo ;ndt_proc_chk
+                HEADER="Process"; HEAD_LINE
+                echo ; ndt_proc_chk
                 echo
                 ;;
         vdi_proc_loop|pl)
                 while :
                 do
-                        echo "`date` -------------------------------------"
+                        HEADER="Process"; HEAD_LINE
                         echo ; ndt_proc_chk
                         echo;echo
                         sleep $SLEEPTIME
@@ -130,17 +154,22 @@ case "$1" in
                 ndt_req_proc_chk
                 echo
                 ;;
-        license|l)
+        license|li)
                 echo; ndt_license
+                echo
+                ;;
+        log|log)
+                echo; ndt_log
                 echo
                 ;;
         *)
                 ndt_service_chk
                 echo
-                echo "[ERROR] Usage: $0 {vdi_service(s,sl)|vdi_proc(p,pl)|reg_proc(r)|vdi_license(l)"
+                echo "[ERROR] Usage: $0 {vdi_service(s,sl)|vdi_proc(p,pl)|reg_proc(r)|vdi_license(li)|log(log)"
                 echo
                 exit 2
                 ;;
 esac
 
 exit 0
+
