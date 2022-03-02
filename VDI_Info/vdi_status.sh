@@ -44,7 +44,7 @@ ps_exec1() {
 
 ndt_proc_chk() {
         echo "Total CPU & Memory usage ..."
-        top -n 1 | egrep "Mem|Cpu" | awk '{print "\t",$0}'
+        top -n 1 | egrep "Mem|Cpu" | awk '{print "  ",$0}'
         echo
         echo -e "Service \t    PID %CPU %MEM CMD                            ELAPSED"
         echo -e "---------------------------------------------------------------------------"

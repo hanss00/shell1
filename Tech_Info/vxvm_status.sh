@@ -2,22 +2,33 @@
 #
 
 disk() {
-        /usr/sbin/vxdisk list
-        echo
+	if [ $SELT = "D" ]
+	then
+        /usr/sbin/vxdisk list ; echo
+	elif [ $SELT = "DETAIL_D" ]
+		/usr/sbin/vvxdisk -px LIST_DMP -um list ; echo
+	fi
 }
 
 volume() {
-        /usr/sbin/vxprint -v |grep ^v
-        echo
+	if [ $SELT = "V" ]
+	then
+        /usr/sbin/vxprint -v |grep ^v ; echo
+	elif [ $SELT = "OPEN_V" ]
+		/usr/sbin/vxprint -o alldgs -v -e v_open | grep -v '^$' ; echo
+	elif [ $SELT = "MIRROR_V" ]
+		# vxprint -o alldgs -htv -e v_nplex=2 -F "%vname %plname %daname %dmname"
+		/usr/sbin/vxprint -o alldgs -v -e v_nplex=2 | grep -v '^$'; echo
+	fi
 }
 
 plex() {
-        /usr/sbin/vxprint -p |grep ^pl
+        /usr/sbin/vxprint -o alldgs -pt |grep  -v '^$'
         echo
 }
 
 subdisk() {
-        /usr/sbin/vxprint -s |grep ^sd
+        /usr/sbin/vxprint -o alldgs -um -st |grep -v ^S |grep  -v '^$'
         echo
 }
 
@@ -41,10 +52,19 @@ then
            reverse=`echo ${str1:$CNT:1}`
            case "$reverse" in
                 d)
-                        disk
+                        SELT="D"; disk
+                        ;;
+                d)
+                        SELT="DETAIL_D"; disk
                         ;;
                 v)
-                        volume
+                        SELT="V"; volume
+                        ;;
+				o)
+                        SELT="OPEN_V"; volume
+                        ;;
+				m)
+                        SELT="MIRROR_V"; volume
                         ;;
                 p)
                         plex
@@ -52,7 +72,7 @@ then
                 s)
                         subdisk
                         ;;
-                m)
+                p)
                         dmp
                         ;;
                 g)
@@ -61,7 +81,7 @@ then
 
                 *)
                         echo -e "  $0 : invalid option --'$reverse' "
-                        echo -e "      valid option : volume(v)|DG(g)|disk(d)|plex(p)|subdisk(s)|dmp(m)"
+                        echo -e "      valid option : volume(v)|DG(g)|disk(d)|plex(p)|subdisk(s)|dmp(p)"
                         echo
                         ;;
            esac
