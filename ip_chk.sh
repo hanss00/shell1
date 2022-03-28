@@ -14,7 +14,7 @@ echo
 for NO in `seq $FIP $EIP`
 do
         IP="`echo ${BASE_IP}.$NO`"
-        if ! ping -c 1 -w 1 $IP &>/dev/null
+        if ! ping -c 1 -w 1 $IP > /dev/null 2>&1
         then
                 echo "$IP is down, they're all going to laugh at you!" | awk '{print "\t",$0}'
         else
